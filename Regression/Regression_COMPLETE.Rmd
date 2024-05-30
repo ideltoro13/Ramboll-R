@@ -1,0 +1,141 @@
+---
+title: "Lab07_OLS_Template"
+author: "YOUR NAME HERE"
+date: "X/XX/20XX"
+output: 
+  html_document:
+    toc: TRUE
+---
+# Chunk 1- load data and packages
+  1.1) load datasets `boobies` and `LionNoses`
+  1.2) load packages `tidyverse` 
+  1.3) describe the structures of each of the datasets. 
+  1.4) using the primary literature, describe what do the data represent? 
+```{r, echo=FALSE }
+library (tidyverse)
+Lion<- read.csv("LionNoses.csv")
+boobies<- read.csv ("boobies.csv")
+```
+
+#Chunk 2- Hypothesis building
+  2.1) What are the null and alternative STATISTICAL hypotheses being bested by the `boobies` dataset
+  2.2) What are the null and alternative STATISTICAL hypotheses being bested by the `LionNoses` dataset 
+  2.3) What are the null and alternative BIOLOGICAL hypotheses being bested by the `boobies` dataset 
+  2.4) What are the null and alternative BIOLOGICAL hypotheses being bested by the `LionNoses` dataset 
+
+```{r, echo=FALSE}
+#Statistical Hypotheses 
+#Hypothesis 1
+#H0: 
+#HA: 
+#Justification 
+
+#Hypothesis 2
+#H0: 
+#HA: 
+#Justification 
+
+#Biological Hypotheses 
+#Hypothesis 1
+#H0: 
+#HA: 
+#Justification 
+
+#Hypothesis 2
+#H0: 
+#HA: 
+#Justification 
+```
+
+# Chunk 3- Check assumptions- Normallity 
+  3.1)  Use a density plot to evaluate how normal the data are for the predictor variables in the boobies and Lion datasets,  do these variables  look normally distirbuted? 
+    -Use, a qq plot and a density plot to visulaly investigate their normality.
+    -Use a `shapiro.test` to statistically ingestigate their normality. 
+    
+  3.2) If you find the data are not normally distributed, how could you normalize these data? Use visual and statistical proof to demonstrate that the data have improved their normallity. 
+  
+```{r, echo=FALSE}
+?geom_density()
+ggplot (boobies, aes(futureBehavior))+ geom_density()
+ggplot (boobies, aes(sample=futureBehavior))+ stat_qq() + geom_qq_line()
+shapiro.test(boobies$futureBehavior)
+
+ggplot (Lion, aes(proportionBlack))+ geom_density()
+ggplot (Lion, aes(sample=proportionBlack))+ stat_qq() + geom_qq_line()
+shapiro.test(Lion$proportionBlack)
+
+Lion$prop.log<- log (Lion$proportionBlack)
+ggplot (Lion, aes(prop.log))+ geom_density()
+ggplot (Lion, aes(sample=prop.log))+ stat_qq() + geom_qq_line()
+shapiro.test(Lion$prop.log)
+```
+
+
+#Chunk 4- Plot the scatterplot with best-fit lines 
+  4.1) Plot the relationship beteen the number of nesting visits and their future behavior response
+  
+  4.2) Plot the relationship between Lion age and the proportion of black on their noses. 
+  
+  4.3) How does the previous plot compare to the transformed response variable? 
+```{r, echo=FALSE}
+?geom_point 
+?stat_smooth
+ggplot(boobies, aes (x=nVisitsNestling, y=futureBehavior)) + geom_point() +
+  stat_smooth(method="lm")
+
+ggplot (Lion, aes(x=ageInYears, y=proportionBlack))+ geom_point() +
+  stat_smooth(method="lm")
+
+ggplot (Lion, aes(x=ageInYears, y=prop.log))+ geom_point() +
+  stat_smooth(method="lm")
+```
+
+```{r, fig.height=4, fig.width=6, res=600, echo=FALSE}
+
+ggplot (Lion, aes(x=ageInYears, y=proportionBlack))+ geom_point(size=6) +
+  stat_smooth( method="lm", color="black") + theme_bw() +  
+  ylab("Proporiton of Black on Nose") + xlab("Age in Years") +
+  theme (axis.text=element_text (size=18), 
+         axis.title=element_text (size=18, face="bold") )
+  
+```
+
+#Chunk 5- Build linear models 
+  5.1)  use the `lm` function to create linear model objects for both the untransformed data and the transformed datasets
+  5.2)  what are the R2 values and p values for each of the models? 
+  5.3) what are the coefficients of the linear models?  
+  5.4)How can these coefficients be interepreted? 
+ 
+```{r, echo=FALSE}
+?lm
+#untransformed data- boobies
+lm.boobies<- lm (futureBehavior ~ nVisitsNestling, data=boobies)
+summary (lm.boobies)
+
+#untransformed data- Lions
+lm.Lions1<- lm ( proportionBlack ~ ageInYears, data=Lion)
+summary (lm.Lions1)
+
+#transformed data- Lions
+lm.Lions2<- lm ( prop.log ~ ageInYears, data=Lion)
+summary (lm.Lions2)
+```
+
+# Chunk 6: Residuals
+  6.1) plot the resiudal plots (ie. fitted values vs residual values)
+  6.2) add a horizontal line at the y=0 value 
+  6.3) Describe the patterns that stand out between the transformed (normal data) and the untransformed raw data 
+```{r, echo=FALSE}
+#plot the residuals for lm1 and lm2 
+#HINT: geom_point(aes(x=.fitted, y=.resid)) 
+ggplot (lm.boobies) +   geom_point(aes(x=.fitted, y=.resid))  + 
+  geom_hline(aes(yintercept=0))
+
+ggplot (lm.Lions1) +   geom_point(aes(x=.fitted, y=.resid))  + 
+  geom_hline(aes(yintercept=0))
+
+ggplot (lm.Lions2) +   geom_point(aes(x=.fitted, y=.resid))  + 
+  geom_hline(aes(yintercept=0))
+
+```
+
