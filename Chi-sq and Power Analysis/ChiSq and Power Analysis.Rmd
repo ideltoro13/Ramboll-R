@@ -1,0 +1,163 @@
+---
+title: "Lab04: Chi Square and Power Analyses "
+author: "YOUR NAME HERE!"
+date: "XX/XX/20XX"
+output: 
+  html_document:
+    toc: TRUE
+---
+#Chunk 1: Load libraries, data and set a working directory 
+  1.1) Load `tidyverse` library 
+  1.2) Load the "HumanHemoglobinElevation.csv" dataset and call it `Hemoglobin`
+  1.3) What is the structure of this dataset? 
+  1.4) What is the global mean of hemoglobin levels? 
+  1.5) What is the population mean by country? Hint use `filter()`
+  
+```{r}
+setwd("/Users/israel/Desktop/Bio170_Spring22/Labs/Lab04- Chi-sq")
+#load libraries 
+library (tidyverse)
+#load data 
+Hemoglobin<-read.csv("HumanHemoglobinElevation.csv", header = T)
+# Structure 
+?str
+str (Hemoglobin)
+# Summary 
+?summary
+summary (Hemoglobin)
+#population mean
+?filter
+library (dplyr)
+USA<-filter (Hemoglobin, population=="USA"); summary (USA); mean (USA$hemoglobin)
+Andes<- filter (Hemoglobin, population=="Andes"); summary (Andes)
+Ethiopia<- filter (Hemoglobin, population=="Ethiopia"); summary (Ethiopia)
+Tibet<- filter (Hemoglobin, population=="Tibet"); summary (Tibet)
+```
+
+#Chunk 2: Plot the data
+  2.1) Plot the distirbutions of hemoglobin levels by population as a density plot (set alpha to 0.5)
+  2.2) Plot the distirbutions of hemoglobin levels by population as a boxplot
+  2.3) Plot the distirbutions of hemoglobin levels by population as a strip plot inside a violin plot~!  (set alpha of points to 0.25 and color by population)
+  2.4) Describe the different plots. What are the pros and cons of each way of visualizing distributions? 
+    2.4 Answer: 
+  
+```{r}
+ggplot (Hemoglobin, aes (x=hemoglobin, fill=population)) + geom_density(alpha=0.5)
+
+ggplot (Hemoglobin, aes (x=population, y=hemoglobin, fill=population)) + geom_boxplot(alpha=0.5)
+
+# THIS IS MY RESPONSE TO 2.4 
+ggplot(Hemoglobin, aes(x=population, y=hemoglobin, color=population)) + 
+  geom_violin(trim=F)+
+  geom_jitter(position=position_jitter(0.2), alpha=0.25)
+
+ggplot(Hemoglobin, aes(x=population, y=hemoglobin, color=population)) + 
+  geom_violin(trim=T)+
+  geom_jitter(position=position_jitter(0.1), alpha=0.25)
+```
+
+#Chunk 3: Plotting 2 categorical vairables 
+  3.1) Create a stacked bar plot of the number of observations in each country by elevation category
+  3.2)  Create a stacked bar plot of the percentage of observations in each country by elevation category
+  
+  3.3) How do these plots differ? 
+  
+```{r}
+library (ggplot2)
+ggplot (Hemoglobin, aes(population, fill=elevation)) + geom_bar()
+ggplot (Hemoglobin, aes(population, fill=elevation)) + geom_bar(position="fill")
+```
+
+#Chunk 4: Chi-sq: 
+  4.1) You are interested in the association between the number of participants in the study within each  country and elevation. What are the null and alternative hypotheses that can be tested? 
+  
+  4.2) create a contingency table of obervations in different populations vs. elevations
+  
+  4.3) create a proportional table of obervations in different populations vs. elevations
+  
+  4.4) calculate a chi-square test testing the association betweenthe number of participants in the study within each  country and elevation. 
+  
+  4.5) Interpret the results. Which of your hypotheses is supported? 
+  
+  4.6) repeat the procedure in 4.1-4.5 to test the association between elevation and hemoglobin levels? 
+  
+```{r}
+?table
+?prop.table
+?chisq.test
+  
+table1<-table (Hemoglobin$population, Hemoglobin$elevation)
+table1
+prop.table(table1)
+
+chisq.test(table1)
+
+table2<-table (Hemoglobin$hemoglobin, Hemoglobin$elevation)
+prop.table(table2)
+
+chisq.test(table2)
+```
+
+#Chunk 5: Power Analysis 
+  5.1) load the `pwr` library 
+  5.2) Calculate the power for each of the four countries, given the proportions of observations and sample sizes for each country and a significance level of 0.05. Which countries have the highest power? Why do you think this is the case? 
+  5.3) What happens when you decrease the expected significance level to 0.01. Interpret these results. 
+  5.4) What happens when you decrease half the number of observations collected in each population but retain a significance level of 0.5. Interpret these results. 
+```{r}
+library (pwr)
+?ES.h
+?pwr.p.test
+#Andes
+h1<- ES.h(0.03618756, 0.00000000); h1
+pwr.p.test(h=h1,n=171,sig.level=0.05,alternative="two.sided")
+
+#Ethiopia
+
+h2<- ES.h(0.04892966,0.01630989); h2
+pwr.p.test(h=h2,n=128,sig.level=0.05,alternative="two.sided")
+
+
+#Tibet 
+h3 <- ES.h(0.03007136, 0.00000000); h3
+pwr.p.test(h=h3,n=59,sig.level=0.05,alternative="two.sided")
+
+#USA 
+h4 <- ES.h(0.00000000, 0.86850153); h4
+
+pwr.p.test(h=h4,n=1704,sig.level=0.05,alternative="two.sided")
+```
+
+# Chunk 6: Fancy Plotting
+
+  6.1) Using pipes create a summary showing the means, number of obervations per country, standard deviations and standard errors for the levels of Hemoglobin in each country. 
+  6.2) Calculate a 95% Confidence interval for each country's hemoglobin level 
+  6.3) Plot a point plot (representing the mean) with error bars tha that show the 95%CI 
+  6.4) Plot a point plot (representing the mean) with error bars tha that show the standard error
+  6.5) Plot a point plot (representing the mean) with error bars tha that show the standard deviation
+  
+```{r}
+?group_by
+?summarise
+?qnorm
+
+summary1<-Hemoglobin %>% group_by(population) %>% 
+  summarize (mean.hemo = mean (hemoglobin), 
+             n.hemo = n(),
+             sd.hemo = sd(hemoglobin),
+             se.hemo= sd(hemoglobin)/sqrt(n())) 
+
+summary1
+
+zstar<- qnorm(0.025, lower.tail = FALSE); zstar
+zstar<- qnorm(0.005, lower.tail = FALSE); zstar
+zstar<- qnorm(0.05, lower.tail = FALSE); zstar
+
+CI95<- summary1 %>% mutate (upper.95= mean.hemo + se.hemo*zstar, 
+                            lower.95= mean.hemo - se.hemo*zstar)
+
+CI95
+
+ggplot (CI95, aes(x=population, y=mean.hemo, color=population)) + geom_point() + 
+   ylim(0,20) + geom_errorbar(aes(ymin=lower.95, ymax=upper.95), width=0.1)
+
+```

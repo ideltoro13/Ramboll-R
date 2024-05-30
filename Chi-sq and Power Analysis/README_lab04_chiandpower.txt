@@ -1,0 +1,3 @@
+README_Lab04_ChiSq and Power Analyses 
+
+In this seven chunk lab students will work on testing and plotting the independence of data. Students will use the “tidyverse” and “pwr” libraries to complete the analyses in this lab. Students will be required to load two datasets HumanHemoglobin and MalariaInfections. For loading instructions see previous labs. Chunks 2 through 5 focus on filtering, subsetting, wrangling and plotting categorical table data. Chunk 6 applies the chi.sq function to test for independence between two categorical variables. Chunk 7 Introduces one power analysis test whenever two proportions are known (i.e. the output of the prop.table function in the previous chunks). 
