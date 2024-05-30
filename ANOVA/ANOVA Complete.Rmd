@@ -1,0 +1,172 @@
+---
+title: "Lab07 ANOVA"
+author: "Name"
+date: "XX XX, 20XX"
+output:
+  html_document:
+    toc: yes
+  word_document:
+    toc: yes
+---
+
+# Chunk 1 Load data and packages
+  1.1 Load the 'tidyverse' package.
+
+  1.2 Upload two csv files for this week's lab: 'HIVmutation.csv' and 'OpsinExpression.csv'.
+
+  1.3 *describe the structure of each dataset* Which data set in appropriate for a 1-way ANOVA and which for a 2-way ANOVA?
+  
+```{r, warning = FALSE, message = FALSE}
+library(tidyverse)
+
+opsin = read.csv("OpsinExpression.csv", header = T)
+str(opsin)
+
+HIV = read.csv("HIVmutation.csv", header=T)
+
+```
+
+# Chunk 2 Make a QQ-plot (Normal probability plot) to visualize normality
+Use the HIV dataset for the following instructions
+  2.1 *Describe how to interpret a QQ plot / Normal probability plot?*
+
+  2.2 Make two qq plots: one for the variable 'fitness' and another for 'logOddsFitness' which represent untransformed and transformed data, respectively.
+
+  2.3 Add a ggtitle of "Untransformed" and "Transformed" to each of your QQ plots
+
+  2.3 Compare the two qq plots. *State your conclusion.* Should you use the untransformed or transformed data for ANOVA?
+
+```{r}
+#How to interpret QQ plot:
+?qqplot
+
+#QQplots HIV data (with titles)
+?ggtitle
+ggplot (HIV, aes (sample=fitness)) + geom_qq() + ggtitle("Untransformed")
+ggplot (HIV, aes (sample=logOddsFitness)) + geom_qq() + ggtitle("Transformed")
+
+#Conclusion
+
+```
+
+# Chunk 3 ANOVA, Tukey-Kramer, and Krustkal Wallis tests
+  3.1 Perform a Kruskal-Wallis test using untransformed 'fitness' as the dependent variable (HIV data). *Is there a significant effect of mutation type on fitness?*
+
+  3.2 Write a null and alternative hypothesis for an ANOVA
+
+  3.3 Perform an ANOVA using transformed 'logOddsFitness' as the dependent variable (HIV data). *Report the two df, F, and P values*. 
+
+  3.4 State your conclusions about the ANOVA. *Is there a significant effect of mutation type on fitness?*
+
+  3.5 If your ANOVA was significant, follow up with a Tukey-Kramer post-hoc test. *Which mutation types were significantly different from each other?*
+```{r}
+#Nonparametric test
+kruskal.test(fitness ~ mutationType, data=HIV)
+
+#Ho:
+#Ha:  
+
+#ANOVA 
+aov1 = aov(logOddsFitness ~ mutationType, data=HIV)
+summary (aov1)
+#Conclusions:
+
+#Tukey-Kramer Post-hoc comparisons
+TukeyHSD (aov1)
+plot (TukeyHSD (aov1))
+
+#Post-hoc conclusions:
+
+```
+
+# Chunk 4  Bar and Error Plots
+  4.1 Using pipes, summarize the HIV dataset so that you have a mean and standard error per group. 
+  
+  4.2 Add to the summary table the a back-transformed mean and upper and lower limits of the error bars. 
+
+  4.3 Plot the back-transformed mean and error bars (HIV data) as a Bar and error plot.
+
+  4.4 Rearrange the order of the categories of mutation type so that the order is 'synonymous', 'minorAAchange', 'majorAAchange', 
+```{r}
+#Back-transformed HIV mutation Bar and Error plot +/- se
+hiv.summary<- HIV %>% group_by(mutationType) %>% 
+        summarize (mean.logFitness = mean(logOddsFitness), 
+              se.logFitness = sd(logOddsFitness/sqrt(n())),
+                  upper = mean.logFitness + se.logFitness, 
+                  lower = mean.logFitness - se.logFitness,
+                  backmean = 2.718^mean.logFitness,
+                  backup = 2.718^upper,
+                  backlow = 2.718^lower)
+hiv.summary
+
+ggplot(hiv.summary, aes (x=mutationType, y=backmean)) + geom_col() + 
+  geom_errorbar(aes(ymin=backlow, ymax=backup), width=0.1) +
+  theme(panel.background = element_blank()) +
+  theme(panel.border = element_rect(fill=NA)) +
+  ylab("Ave fitness")
+
+#rearranging order of categories
+factmutation = factor(hiv.summary$mutationType, levels = c('synonymous', 'minorAAchange', 'majorAAchange'))
+factmutation
+
+ggplot(hiv.summary, aes (x=factmutation, y=backmean)) + geom_col() + 
+  geom_errorbar(aes(ymin=backlow, ymax=backup), width=0.1) +
+  theme(panel.background = element_blank()) +
+  theme(panel.border = element_rect(fill=NA)) +    
+  ylab("Ave fitness")
+```
+
+# Chunk 5: 2-way ANOVA
+Use the Opsin data set for the following chunks:
+  5.1 *Write the three null hypotheses that are being tested with a 2-way ANOVA*
+  5.2 Perform a 2-way ANOVA.*Interpret the ANOVA source table*
+
+# Chunk 6: Point and Error Plot of 2-way ANOVA.
+  6.1 Using pipes, create separate 'Swamp' and 'Spring' summary tables for mean and se relative Expression of SWS1 gene (grouped by water clarity category.
+  
+  6.2. Combine the summary tables and add a column with the Population names.
+  
+  6.3  Make a point and error plot for the opsin data. Label the y axis "Relative expression of SWS1 gene" and x axis "Population". 
+  
+  6.4 Designate shape and color to "water quality levels" and increase the size of the points.
+  
+  6.5 *State your conclusions*. Which treatment groups is gene expression greater?
+
+```{r}
+#making the summary table
+Spring = filter(opsin, population =="Spring") 
+Swamp = filter(opsin, population =="Swamp")
+
+#spring summary
+spr.summary = Spring %>% group_by(waterClarity) %>% 
+                  summarize (mean.exp = mean(relativeExpressionOfSWS1), 
+                            se.exp = sd(relativeExpressionOfSWS1/sqrt(n())))
+
+#Swamp Summary
+swa.summary = Swamp %>% group_by(waterClarity) %>% 
+                  summarize (mean.exp = mean(relativeExpressionOfSWS1), 
+                            se.exp = sd(relativeExpressionOfSWS1/sqrt(n())))
+
+
+combo.summary = rbind(spr.summary, swa.summary)
+Population = c("Spring", "Spring", "Swamp", "Swamp"); 
+Population = as.data.frame(Population)
+
+total.summary = cbind(Population, combo.summary)  
+
+#Point and error plot
+ggplot(data = total.summary, aes(x=herbivores, y=mean.area, color = Height, shape = Height)) + geom_point(size=3) +
+  geom_errorbar(aes(ymin = mean.area - se.area, ymax = mean.area + se.area), width = 0.1) +
+  theme(legend.text=element_text(size=12)) +
+  theme(panel.background = element_blank(), panel.border = element_rect(fill=NA)) +
+  theme(axis.text=element_text(size=12)) + 
+  ylab("Area of algal cover") +
+  xlab("Hebivore Treatment")
+
+#Fancy plot
+ggplot(data = total.summary, aes(x=Population, y=mean.exp, color = waterClarity, shape = waterClarity)) + geom_point(size=3) +
+  geom_errorbar(aes(ymin = mean.exp - se.exp, ymax = mean.exp + se.exp), width = 0.1)
+
+#Conclusions
+```
+#knit and submit
