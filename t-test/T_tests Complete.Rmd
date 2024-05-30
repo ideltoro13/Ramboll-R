@@ -1,0 +1,143 @@
+---
+title: "Lab 05- T-tests"
+author: "YIsrael"
+date: "CHANGE THIS "
+output:
+  word_document:
+    toc: yes
+  html_document:
+    toc: yes
+---
+# Chunk 1: Load libraries and datasets 
+  ## 1.1) Load `tidyverse` 
+    ### THIRD LEVEL HEADER 
+  ## 1.2) read in two datasets "WormSperm.csv" and "BlackbirdTesto.csv"
+  ## 1.3) What are the structures of each of these two datasets? 
+```{r, echo=FALSE}
+setwd("/Users/israel/Desktop/Bio170_Spring22/Labs/Lab05- t-test")
+library (tidyverse)
+library (car)
+sperm<- read_csv("WormSperm.csv")
+bbirds<- read_csv("BlackbirdTesto.csv")
+str (sperm)
+```
+
+# Chunk 2: Define Hypotheses and Plot the data! 
+  2.1) Using pipes, summarize the bird and sperm datasets so that you have a mean and standard error per group (treatment in birds and sex in sperm). 
+  2.2) Identify a null and alternative hypotheses testing for differences in means in each of these datasets 
+  2.3) Plot summarized data as a point plot with error bars representing the standard error 
+```{r, echo=FALSE}
+
+bird.summary<- bbirds %>% group_by (Treatment) %>% 
+  summarize (mean.antibody=mean(Antibody.production),
+             se.antibody=sd(Antibody.production)/ sqrt (n()))
+
+bird.summary
+
+sperm.summary<- sperm %>% group_by(Sex) %>% 
+  summarize (mean.size=mean (SpermSize), 
+             se.size= sd(SpermSize)/sqrt (n()))
+
+ggplot (bird.summary, aes (x=Treatment, y=mean.antibody)) + geom_point() + 
+  geom_errorbar(aes(ymin=mean.antibody-se.antibody, ymax=mean.antibody+se.antibody), width=0.25)
+
+ggplot (sperm.summary, aes (x=Sex, y=mean.size)) + geom_point() + 
+  geom_errorbar(aes (ymin=mean.size-se.size, ymax=mean.size+se.size), width=.25)
+```
+
+# Chunk 3: Check statistical assumptions
+  3.1) Using a shapiro test, a density plot and a qq plot check the two datasets for normality
+    3.1b) If any dataset is not normally distributed attempt a transformation to normalize the data. Does the transformation improve the normality of the distribution? 
+  3.2) Using both a Levene Test and a Flinger-Kileen test, check if the datasets meet the assumption of homeogeneity of variances 
+  3.3) What about the assumption of independence, are all observations in each of the datasets independent of each other? 
+  
+```{r, echo=FALSE}
+?shapiro.test
+?car::leveneTest
+
+#normality 
+shapiro.test (bbirds$Antibody.production)
+
+ggplot (bbirds, aes(Antibody.production, fill=Treatment)) + 
+  geom_density(alpha=0.5) + xlim(0,200)
+
+
+ggplot (bbirds, aes (sample=Antibody.production, color=Treatment)) + 
+  geom_qq() + stat_qq_line()
+
+bbirds$Antibody.log= log (bbirds$Antibody.production)
+shapiro.test (bbirds$Antibody.log)
+
+ggplot (bbirds, aes (Antibody.log, color=Treatment)) + geom_density()
+
+shapiro.test (sperm$SpermSize)
+ggplot (sperm, aes(SpermSize, fill=Sex)) + geom_density(alpha=0.5)
+
+ggplot (sperm, aes (sample=SpermSize, color=Sex)) + geom_qq() + stat_qq_line()
+sperm$log.size<- log (sperm$SpermSize)
+shapiro.test(sperm$SpermSize)
+
+#homogeneity of variance 
+leveneTest(bbirds$Antibody.production, group=bbirds$Treatment)
+leveneTest(sperm$SpermSize, group=sperm$Sex)
+
+#alternative to levene test is Fligner-Kileen test for two groups
+?fligner.test
+fligner.test(Antibody.production ~ Treatment, bbirds)
+fligner.test(SpermSize ~ Sex, sperm)
+
+```
+
+# Chunk 4: Compelte an unpaired t-test 
+  4.1) Complete a t.test for both the transformed and untranfromed Antibody production predicted by Treatment in the bbirds dataset. Set the `var.equal=TRUE`
+  
+  4.2) Complete a t.test for both the transformed and untranfromed SpermSize predicted by Sex in the sperm dataset. Set the `var.equal=FALSE`
+  
+  4.3) Interpret the results in your own words. 
+```{r, echo=FALSE}
+?t.test
+t.test (Antibody.production ~ Treatment, data=bbirds, var.equal=F)
+t.test (Antibody.log ~ Treatment, data=bbirds, var.equal=TRUE)
+
+t.test (SpermSize ~ Sex, data=sperm, var.equal=FALSE)
+t.test (log.size ~ Sex, data=sperm, var.equal=FALSE)
+```
+
+# Chunk 5: Complete a paired t-test and plot a paired point plot 
+  5.1) Complete a paired t test for the bbirds dataset. use `paired=TRUE`
+  
+  5.2) Interpret the results and discuss Why is this the appropriate test for these data? 
+  
+  5.3) Plot the data as paired point plot
+  
+
+```{r, fig.height=4, fig.width=6, res=600, echo=FALSE}
+library (tidyverse)
+?geom_point()
+?geom_line()
+str(bbirds)
+t.test (Antibody.production ~ Treatment, data=bbirds, var.equal=TRUE, paired=T)
+t.test (Antibody.log ~ Treatment, data=bbirds, var.equal=TRUE, paired=T)
+
+ggplot (bbirds, aes(x=Treatment, y=Antibody.log)) + 
+  geom_point(size=6, levels = c("Before", "After"), color="blue") +
+  geom_line(aes(group=blackbird)) + theme_bw() + 
+  theme (axis.text=element_text (size=18), 
+         axis.title=element_text (size=18, face="bold") )
+  
+```
+
+# Chunk 6: Non-parametric alternative 
+6.1) Complete a wilcoxon rank sums test of Antibody.log predicted by treatment with equal variances and paired data. Interpret the results in your own words. 
+
+6.2) Using the sperm data, complte a wilcoxon rank sums test of log.sperm size predicted by sex with unequal variances. Interpret the results in your own words. 
+```{r, echo=FALSE}
+wilcox.test(Antibody.log ~ Treatment, data=bbirds, var.equal=TRUE, paired=T)
+ggplot (bbirds, aes(Treatment, y=Antibody.log)) + geom_boxplot()
+
+wilcox.test (log.size ~ Sex, data=sperm, var.equal=FALSE)
+
+```
+
+
+

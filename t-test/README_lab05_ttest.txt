@@ -1,0 +1,6 @@
+README_Lab05_T-tests
+In this six-chunk lab, students will work with two different datasets. The first is a dataset on antibody concentrations in birds before and after a surgery and the second is on sperm size in C. elegans between male and hermaphrodite worms. This lab requires that the datasets be loaded independently rather than by using the “data()” function used in previous labs. We encourage students to use the function “read.csv()” or “read_csv()” or load the dataset using the point-and-click options available if the data are uploaded to the server. This package requires both the “tidyverse” and “car” packages for analyses. 
+
+Chunk 2 introduces students to creating summarized data objects by implementing pipes %>% in the from the tidyverse. We encourage our students to plot point-plots with standard error bars rather than barcharts as these are more accurately represent the summarized data objects (i.e. there is only one true mean value). 
+
+Chunk 3 is a set of checks of the statistical assumptions of normality and homogeneity of variances using shapiro tests and levene tests respectively. Chunk 4 and 5 compare the outputs of both a paired and unpaired t-test and chunk 6 introduces the non-parametric alternative to a t.test (Wilcoxon rank sums test). 
